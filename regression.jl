@@ -4,6 +4,7 @@ using Plotly
 using Interact
 using Distributions
 using CSV
+using LinearAlgebra
 function gauss(sigma,mu) 
     data=collect(mu-(sigma*sqrt(2*pi)):0.0001:mu+(sigma*sqrt(2*pi)))
     #((1/sigma*sqrt(2*pi))*(Base.MathConstants.e^((-0.5)*((x-mu)/sigma)^2)))
@@ -92,13 +93,12 @@ function interference(yes)
         counter=counter+1
     end
     trace3,=Gen.generate(model,([1,2,5,8,11,16],),choices)
-    println(trace3[:slope])
     for iter in 1:1500
         trace3,acc=Gen.mh(trace3,select(:slope,:intercept))
     end
-    println(trace3[:slope]," ",trace3[:intercept])
     return(trace3[:slope],trace3[:intercept])
 end
+
 function data_csv(filename)
     global data_matrix
     data_matrix=CSV.read(filename)
@@ -115,7 +115,9 @@ function data_csv(filename)
         
     end
     slope,intercept=interference(new_data)
+
     new_yes=[]
+
     for x in [1,2,5,8,11,16]
         push!(new_yes,intercept+slope*x)
     end
@@ -123,11 +125,12 @@ function data_csv(filename)
     new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line")
     Plotly.deletetraces!(p,0,1)
     Plotly.addtraces!(p,trace,new_trace)
-    ui=dom"div"(wdg,vbox(file, p),drop)
+    ui=dom"div"(wdg,vbox(file, p),hbox(drop,number_of_lines,opti))
     body!(window,ui)
     
 end
 function plot_csv(param)
+    current=param
     global data_matrix
     new_data=[]
     for x in data_matrix[param,:]
@@ -148,10 +151,36 @@ function plot_csv(param)
     Plotly.deletetraces!(p,0,1)
     Plotly.addtraces!(p,trace,new_trace)
 end
+function drawlines(o)
+    input=parse(Float64,number_of_lines[])
+    new_data=[]
+    println(drop[:value])
+    
+    for x in data_matrix[current,:]
+        if x!="NA"
+            append!(new_data,parse(Float64,x))
+        else
+            append!(new_data,0)
+        end
+        
+    end
+    for x in 1:input
+        slope,intercept=interference(new_data)
+        new_yes=[]
+        for elem in [1,2,5,8,11,16]
+            push!(new_yes,intercept+slope*elem)
+        end
+        new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line")
+        Plotly.addtraces!(p,new_trace)
+    end
+end
+global current=1
 sli = slider(1:100, label="i")
 on(updateplot, sli)
 global sigma=textbox("enter sigma:",label="Parametrs=")
+global number_of_lines=textbox("Enter number of line to draw")
 global mu=textbox("enter mu:")
+global opti=button("Draw lines")
 b=button("Press your cock retard")
 on(updateDistro,b)
 drop=dropdown([])
@@ -161,22 +190,8 @@ options = Observable(["Данные", "Параметры модели", "c"])
 wdg = tabs(options)
 on(pri,wdg)
 on(data_csv,file)
+on(drawlines,opti)
 
-##
-#choices=Gen.choicemap()
-#counter=1
-#for j in [386,249,108,66,67,59]
-#    global y
-#    Gen.set_value!(choices,(:y,counter),j)
-#    global counter=counter+1
-#end
-#trace3,=Gen.generate(model,([1,2,5,8,11,16],),choices)
-#println(trace3[:slope])
-#for iter in 1:1500
-#    global trace3,acc=Gen.mh(trace3,select(:slope,:intercept))
-#end
-#println(trace3[:slope]," ",trace3[:intercept])
-##
 ui = dom"div"(wdg,vbox(file, p))
 body!(window,ui)
 readline()
