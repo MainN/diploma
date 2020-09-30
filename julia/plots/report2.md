@@ -15,4 +15,4 @@
 # Alpha - sigma correlation
 ![](alpha_sigma.png)
 # beta - sigma correlation
-![](alpha_beta.png)
+![](beta_sigma.png)

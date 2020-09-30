@@ -7,23 +7,7 @@ using Distributions
 using CSV
 using DataFrames
 using Tables
-function maps1()
-    marker = attr(size=[20, 30, 15, 10],
-                  color=[10, 20, 40, 50],
-                  cmin=0,
-                  cmax=50,
-                  colorscale="Greens",
-                  colorbar=attr(title="Some rate",
-                                ticksuffix="%",
-                                showticksuffix="last"),
-                  line_color="black")
-    trace = scattergeo(;mode="markers", locations=["FRA", "DEU", "RUS", "ESP"],
-                        marker=marker, name="Europe Data")
-    layout = Layout(geo_scope="europe", geo_resolution=50, width=500, height=550,
-                    margin=attr(l=0, r=0, t=10, b=0))
-    plot(trace, layout)
-end
-@gen function model(data::Matrix{Float64},time::Vector{Float64})
+@gen function model(data::Matrix{Float64},timer::Vector{Float64})
     delta_err=@trace(exponential(1),:delta_err)
     delta_C=@trace(exponential(1),:delta_C)
     b0=@trace(normal(0,1),:b0)
@@ -32,7 +16,7 @@ end
     for t in 1:6
         for i in 1:164
             if data[i,t]!=0.0
-                dset=@trace(normal(C+b0+b1*time[t],delta_err),(:dset,i,t))
+                dset=@trace(normal(C+b0+b1*timer[t],delta_err),(:dset,i,t))
             end
         end
     end
@@ -124,25 +108,44 @@ df2.B=dat2
 df3=DataFrame()
 df3.A=1:6
 df3.B=persons_data[1]
-
-#w=Window()
-#ui=vbox(hbox(dataviewer(df1),dataviewer(df2)),dataviewer(df3))
-#body!(w,ui)
-
-#readline()
 plot_delta_err=Plots.plot(Exponential(1),xlabel="delta_err")
 plot_delta_C=Plots.plot(Exponential(1),xlabel="delta_err")
 b0=Plots.plot(Normal(0,1),xlabel="b0")
 b1=Plots.plot(Normal(0,1),xlabel="b1")
 distro_Plot=Plots.plot(plot_delta_err,plot_delta_C,b0,b1)
-trace = Gen.simulate(model, (data,times))
 constraints = Gen.choicemap()
 constraints[:b0]=6
 constraints[:b1]=-2
+constraints[:C]=0
 constraints[:delta_C]=1
 constraints[:delta_err]=1
-(new_data,_)=Gen.generate(model,(data,times),constraints)
-my_table=Tables.table(get_args(new_data)[1])
+(new_data,weights,distr)=Gen.importance_sampling(model,(data,log_times),constraints,1500)
+yes=zeros(164,6)
+for i in 1:1500
+    choices=Gen.get_choices(new_data[i])
+    for x in 1:164
+        for y in 1:6
+            if data[x,y]!=0
+                yes[x,y]=yes[x,y]+choices[(:dset,x,y)]
+            else
+                yes[x,y]=yes[x,y]
+            end
+        end
+    end
+end
+new_choices=[]
+
+for x in 1:164
+    for y in 1:6
+        if yes[x,y]!=0
+            yes[x,y]= (yes[x,y]/1500)
+        else
+            yes[x,y]=0
+        end
+    end
+end
+
+my_table=Tables.table(yes)
 open("myfile.csv", "w") do io
     CSV.write(io, my_table)
 end;

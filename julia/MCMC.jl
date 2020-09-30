@@ -43,8 +43,8 @@ function main()
 data = [1,2,3,4,5,6]
 alpha_distr = Normal(5,10)
 beta_distr = Normal(0,10)
-sigma_distr = InverseGamma(3, 0.5)
-n_samples = 1_000_0
+sigma_distr = InverseGamma(1, 1)
+n_samples = 1_000_00
 alpha = zeros(n_samples)
 beta= zeros(n_samples)
 sigma = zeros(n_samples)
@@ -55,7 +55,7 @@ sigma[1]=rand(sigma_distr)
 alpha_pdf(x)=(Distributions.pdf(alpha_distr,x))
 beta_pdf(x)=(Distributions.pdf(beta_distr,x))
 sigma_pdf(x)=(Distributions.pdf(sigma_distr,x))
-JumpingWidth = 1.5
+JumpingWidth = 0.13
 for x in 2:n_samples
     #component-wise metropolis
     alpha_new = rand(  Normal( alpha[x-1] , JumpingWidth )  )
@@ -75,7 +75,7 @@ for x in 2:n_samples
     logprior_alpha1 = log10(  alpha_pdf(alpha_new)   )
     logprior_beta1 = log10(  beta_pdf(beta_new)   )
     logprior_sigma1 = log10(  sigma_pdf(sigma_new)   )
-    q0 = loglikelihood(data,alpha[x-1],beta[x-1],sigma[x])+logprior_alpha0+logprior_beta0+logprior_sigma0
+    q0 = loglikelihood(data,alpha[x-1],beta[x-1],sigma[x-1])+logprior_alpha0+logprior_beta0+logprior_sigma0
     q1 = loglikelihood(data,alpha_new,beta_new,sigma_new)+logprior_alpha1+logprior_beta1+logprior_sigma1
     if log10(rand())<q1-q0
         alpha[x]=alpha_new
@@ -100,6 +100,11 @@ histogram(beta,legend=false,title="Posterior of beta") |> display
 readline()
 histogram(sigma,legend=false,title="Posterior of sigma") |> display
 readline()
-
+plot(alpha, beta, seriestype = :scatter, title = "My Scatter Plot") |> display
+readline()
+plot(alpha, sigma, seriestype = :scatter, title = "My Scatter Plot") |> display
+readline()
+plot(beta, sigma, seriestype = :scatter, title = "My Scatter Plot") |> display
+readline()
 end
 @time main()

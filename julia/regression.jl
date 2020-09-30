@@ -121,8 +121,8 @@ function data_csv(filename)
     for x in [1,2,5,8,11,16]
         push!(new_yes,intercept+slope*x)
     end
-    trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_data,mode="markers")
-    new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line")
+    trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_data,mode="markers",marker_size=18)
+    new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line",line_color="#A9A9A9")
     Plotly.deletetraces!(p,0,1)
     Plotly.addtraces!(p,trace,new_trace)
     ui=dom"div"(wdg,vbox(file, p),hbox(drop,number_of_lines,opti))
@@ -147,7 +147,7 @@ function plot_csv(param)
         push!(new_yes,intercept+slope*x)
     end
     trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_data,mode="markers")
-    new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line")
+    new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line",line_color="#A9A9A9")
     Plotly.deletetraces!(p,0,1)
     Plotly.addtraces!(p,trace,new_trace)
 end
@@ -170,8 +170,11 @@ function drawlines(o)
         for elem in [1,2,5,8,11,16]
             push!(new_yes,intercept+slope*elem)
         end
-        new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line")
+        
+        new_trace = Plotly.scatter(x=["1","2","5","8","11","16"],y=new_yes,mode="line",line_color="#A9A9A9")
+        
         Plotly.addtraces!(p,new_trace)
+        #p|>new_trace
     end
 end
 global current=1
@@ -181,7 +184,7 @@ global sigma=textbox("enter sigma:",label="Parametrs=")
 global number_of_lines=textbox("Enter number of line to draw")
 global mu=textbox("enter mu:")
 global opti=button("Draw lines")
-b=button("Press your cock retard")
+b=button("Отображание модели")
 on(updateDistro,b)
 drop=dropdown([])
 println(drop[:options])
@@ -191,7 +194,6 @@ wdg = tabs(options)
 on(pri,wdg)
 on(data_csv,file)
 on(drawlines,opti)
-
 ui = dom"div"(wdg,vbox(file, p))
 body!(window,ui)
 readline()
