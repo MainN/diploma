@@ -7,10 +7,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pyro
 import pyro.distributions as dist
-def model():
+def model(data):
     alpha = pyro.sample('alpha', pyro.distributions.Normal(0,5))
     beta = pyro.sample('beta', pyro.distributions.Normal(0,5))
     sigma = pyro.sample('sigma',pyro.distributions.Gamma(0.5,4.))
-    return alpha,beta,sigma
-for _ in range(3):
-    print(model())
+    mu = alpha + beta*torch.FloatTensor(data)
+    res = pyro.sample('result',pyro.distributions.Normal(mu,sigma))
+    return res
+print(model([1,2,3,4,5,6]))
